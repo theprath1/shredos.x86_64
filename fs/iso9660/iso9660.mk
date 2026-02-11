@@ -95,6 +95,11 @@ else
 ROOTFS_ISO9660_TMP_TARGET_DIR = $(TARGET_DIR)
 endif
 
+define ROOTFS_ISO9660_COPY_MEMTEST_BINARIES
+	$(INSTALL) -D -m 0644 $(BINARIES_DIR)/memtest.efi $(ROOTFS_ISO9660_TMP_TARGET_DIR)/EFI/BOOT/memtest.efi
+	$(INSTALL) -D -m 0644 $(BINARIES_DIR)/memtest.bin $(ROOTFS_ISO9660_TMP_TARGET_DIR)/boot/memtest
+endef
+
 ################################################################################
 # Reproducible build support
 ################################################################################
@@ -160,6 +165,8 @@ define ROOTFS_ISO9660_INSTALL_GRUB2_EFI
 	if [ "$(BR2_x86_64)" = "y" ]; then \
 		$(INSTALL) -D -m 0644 $(BINARIES_DIR)/efi-part/EFI/BOOT/bootx64.efi $(TOPDIR)/board/shredos/bootx64.efi; \
 	fi
+	# Copy memtest.efi and memtest.bin to ISO9660 filesystem
+	$(ROOTFS_ISO9660_COPY_MEMTEST_BINARIES)
 	# Create EFI FAT partition
 	$(RM) -rf $(ROOTFS_ISO9660_EFI_PARTITION_PATH)
 	mkdir -p $(dir $(ROOTFS_ISO9660_EFI_PARTITION_PATH))
@@ -277,6 +284,8 @@ define ROOTFS_ISO9660_INSTALL_GRUB2_EFI
 	if [ "$(BR2_x86_64)" = "y" ]; then \
 		$(INSTALL) -D -m 0644 $(BINARIES_DIR)/efi-part/EFI/BOOT/bootx64.efi $(TOPDIR)/board/shredos/bootx64.efi; \
 	fi
+	# Copy memtest.efi and memtest.bin to ISO9660 filesystem
+	$(ROOTFS_ISO9660_COPY_MEMTEST_BINARIES)
 	# Create EFI FAT partition
 	$(RM) -rf $(ROOTFS_ISO9660_EFI_PARTITION_PATH)
 	mkdir -p $(dir $(ROOTFS_ISO9660_EFI_PARTITION_PATH))
