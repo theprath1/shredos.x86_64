@@ -1,0 +1,16 @@
+config BR2_PACKAGE_LIBFPRINT
+	bool "libfprint"
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on BR2_USE_MMU
+	select BR2_PACKAGE_LIBUSB
+	select BR2_PACKAGE_LIBGLIB2
+	select BR2_PACKAGE_PIXMAN
+	help
+	  libfprint is an open source software library designed to make
+	  it easy to add support for consumer fingerprint readers to
+	  your software.
+
+	  https://fprint.freedesktop.org/
+
+comment "libfprint needs a toolchain w/ threads"
+	depends on !BR2_TOOLCHAIN_HAS_THREADS

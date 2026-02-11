@@ -1,0 +1,13 @@
+config BR2_PACKAGE_POCKETSPHINX
+	bool "pocketsphinx"
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	select BR2_PACKAGE_SPHINXBASE
+	help
+	  PocketSphinx is a lightweight speech recognition engine,
+	  specifically tuned for handheld and mobile devices, though
+	  it works equally well on the desktop.
+
+	  https://github.com/cmusphinx/pocketsphinx
+
+comment "pocketsphinx needs a toolchain w/ threads"
+	depends on !BR2_TOOLCHAIN_HAS_THREADS

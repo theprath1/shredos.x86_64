@@ -1,0 +1,36 @@
+config BR2_PACKAGE_SHREDOS_VAULT
+	bool "shredos-vault"
+	select BR2_PACKAGE_NCURSES
+	select BR2_PACKAGE_NCURSES_WCHAR
+	select BR2_PACKAGE_CRYPTSETUP
+	select BR2_PACKAGE_LIBCONFIG
+	select BR2_PACKAGE_NWIPE
+	help
+	  ShredOS Vault - Authentication gate with dead man's switch.
+	  Provides password, fingerprint, and voice authentication
+	  to unlock a LUKS-encrypted volume. Automatically encrypts
+	  and wipes the target drive after exceeding the configured
+	  failure threshold.
+
+if BR2_PACKAGE_SHREDOS_VAULT
+
+config BR2_PACKAGE_SHREDOS_VAULT_FINGERPRINT
+	bool "fingerprint authentication support"
+	select BR2_PACKAGE_LIBFPRINT
+	help
+	  Enable fingerprint reader authentication via libfprint.
+	  Requires a compatible USB fingerprint reader.
+
+config BR2_PACKAGE_SHREDOS_VAULT_VOICE
+	bool "voice passphrase authentication support"
+	select BR2_PACKAGE_PORTAUDIO
+	select BR2_PACKAGE_PORTAUDIO_ALSA
+	select BR2_PACKAGE_ALSA_LIB
+	select BR2_PACKAGE_SPHINXBASE
+	select BR2_PACKAGE_POCKETSPHINX
+	help
+	  Enable voice passphrase authentication via PocketSphinx.
+	  Requires a microphone (USB or built-in via HDA).
+	  Uses offline speech-to-text to match a spoken passphrase.
+
+endif
