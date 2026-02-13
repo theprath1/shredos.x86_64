@@ -1,7 +1,7 @@
 [Unit]
 Description=ShredOS Vault Authentication Gate
 DefaultDependencies=no
-Before=initrd.target
+Before=initrd-root-fs.target
 After=systemd-udevd.service
 
 [Service]
@@ -11,10 +11,9 @@ StandardInput=tty
 StandardOutput=tty
 StandardError=tty
 TTYPath=/dev/console
-TTYVHangup=yes
 TTYReset=yes
+TTYVHangup=yes
 RemainAfterExit=yes
-Environment=TERM=linux
 
 [Install]
 WantedBy=initrd.target

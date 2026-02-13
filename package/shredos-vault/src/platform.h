@@ -1,10 +1,10 @@
 /*
- * platform.h — Platform Abstraction Layer for ShredOS Vault
+ * platform.h -- Platform Abstraction Layer
  *
- * Detects platform and available features at compile time.
- * Provides unified interfaces for platform-specific operations.
+ * Compile-time platform detection, feature flags, default paths,
+ * and cross-platform API declarations.
  *
- * Copyright 2025 — GPL-2.0+
+ * Copyright 2025 -- GPL-2.0+
  */
 
 #ifndef VAULT_PLATFORM_H
@@ -24,36 +24,29 @@
 #elif defined(__linux__)
   #define VAULT_PLATFORM_LINUX 1
 #else
-  #define VAULT_PLATFORM_UNKNOWN 1
+  #error "Unsupported platform"
 #endif
 
 /* ------------------------------------------------------------------ */
-/*  Feature flags (set by build system or auto-detected)               */
+/*  Feature flags (set via -D from the build system)                   */
+/*                                                                     */
+/*  HAVE_NCURSES        -- ncurses terminal library                    */
+/*  HAVE_LIBCONFIG      -- libconfig config parser                     */
+/*  HAVE_LIBCRYPTSETUP  -- libcryptsetup LUKS support                  */
+/*  HAVE_FINGERPRINT    -- libfprint fingerprint reader                */
+/*  HAVE_VOICE          -- PocketSphinx + PortAudio voice auth         */
+/*  HAVE_IOKIT          -- macOS IOKit framework                       */
+/*  HAVE_CRYPT_H        -- POSIX crypt() function                      */
 /* ------------------------------------------------------------------ */
 
-/*
- * These are typically passed via -D flags from the Makefile:
- *   HAVE_NCURSES       — ncurses terminal library
- *   HAVE_LIBCONFIG     — libconfig config file parser
- *   HAVE_LIBCRYPTSETUP — libcryptsetup LUKS support
- *   HAVE_FINGERPRINT   — libfprint fingerprint reader
- *   HAVE_VOICE         — PocketSphinx + PortAudio voice auth
- *   HAVE_IOKIT         — macOS IOKit framework
- *   HAVE_CRYPT_H       — POSIX crypt() function
- */
-
-/* ------------------------------------------------------------------ */
-/*  Backend selection (derived from feature flags)                     */
-/* ------------------------------------------------------------------ */
-
-/* Config backend */
+/* Config backend selection */
 #ifdef HAVE_LIBCONFIG
   #define VAULT_CONFIG_BACKEND_LIBCONFIG 1
 #else
   #define VAULT_CONFIG_BACKEND_INI 1
 #endif
 
-/* TUI backend */
+/* TUI backend selection */
 #ifdef HAVE_NCURSES
   #define VAULT_TUI_BACKEND_NCURSES 1
 #elif defined(VAULT_PLATFORM_WINDOWS)
@@ -70,49 +63,35 @@
 #endif
 
 /* ------------------------------------------------------------------ */
-/*  Platform-specific default paths                                    */
+/*  Default paths per platform                                         */
 /* ------------------------------------------------------------------ */
 
 #if defined(VAULT_PLATFORM_WINDOWS)
-  #define VAULT_CONFIG_PATH_DEFAULT   "C:\\ProgramData\\ShredOS-Vault\\vault.conf"
-  #define VAULT_CONFIG_DIR_DEFAULT    "C:\\ProgramData\\ShredOS-Vault"
-  #define VAULT_LOG_PATH_DEFAULT      "C:\\ProgramData\\ShredOS-Vault\\vault.log"
+  #define VAULT_CONFIG_PATH_DEFAULT  "C:\\ProgramData\\ShredOS-Vault\\vault.conf"
+  #define VAULT_CONFIG_DIR_DEFAULT   "C:\\ProgramData\\ShredOS-Vault"
 #elif defined(VAULT_PLATFORM_MACOS)
-  #define VAULT_CONFIG_PATH_DEFAULT   "/Library/Application Support/ShredOS-Vault/vault.conf"
-  #define VAULT_CONFIG_DIR_DEFAULT    "/Library/Application Support/ShredOS-Vault"
-  #define VAULT_LOG_PATH_DEFAULT      "/var/log/shredos-vault.log"
+  #define VAULT_CONFIG_PATH_DEFAULT  "/Library/Application Support/ShredOS-Vault/vault.conf"
+  #define VAULT_CONFIG_DIR_DEFAULT   "/Library/Application Support/ShredOS-Vault"
 #else /* Linux */
-  #define VAULT_CONFIG_PATH_DEFAULT   "/etc/shredos-vault/vault.conf"
-  #define VAULT_CONFIG_DIR_DEFAULT    "/etc/shredos-vault"
-  #define VAULT_LOG_PATH_DEFAULT      "/var/log/shredos-vault.log"
+  #define VAULT_CONFIG_PATH_DEFAULT  "/etc/shredos-vault/vault.conf"
+  #define VAULT_CONFIG_DIR_DEFAULT   "/etc/shredos-vault"
 #endif
 
 /* ------------------------------------------------------------------ */
 /*  Platform API                                                       */
 /* ------------------------------------------------------------------ */
 
-/*
- * Initiate system shutdown/power off.
- * This function does not return on success.
- */
+/* Initiate system power off. Does not return on success. */
 void vault_platform_shutdown(void);
 
-/*
- * Lock all current and future memory pages to prevent
- * sensitive data from being swapped to disk.
- * Non-fatal on failure — prints a warning.
- */
+/* Lock all memory pages to prevent swapping sensitive data. */
 void vault_platform_lock_memory(void);
 
-/*
- * Fill buffer with cryptographically secure random bytes.
- * Returns 0 on success, -1 on failure.
- */
+/* Fill buffer with cryptographically secure random bytes.
+ * Returns 0 on success, -1 on failure. */
 int vault_platform_random(uint8_t *buf, size_t len);
 
-/*
- * Securely zero memory (prevents compiler optimization).
- */
+/* Securely zero memory (prevents compiler optimisation). */
 void vault_secure_memzero(void *ptr, size_t len);
 
 #endif /* VAULT_PLATFORM_H */

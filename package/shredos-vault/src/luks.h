@@ -1,69 +1,43 @@
 /*
- * luks.h — LUKS Volume Management Interface
+ * luks.h -- LUKS Encryption Wrapper
  *
- * Provides LUKS open/close/mount/unmount/format operations.
- * Requires libcryptsetup (Linux only). On platforms without
- * HAVE_LIBCRYPTSETUP, all functions return -1.
- *
- * Copyright 2025 — GPL-2.0+
+ * Copyright 2025 -- GPL-2.0+
  */
 
 #ifndef VAULT_LUKS_H
 #define VAULT_LUKS_H
 
-#include "config.h"
+#include "platform.h"
 
-/*
- * Open (unlock) a LUKS device.
- * Maps device to /dev/mapper/<dm_name>.
- * Returns 0 on success, -1 on failure or unavailable.
- */
+#define VAULT_DM_NAME "vault_crypt"
+
+/* Check if LUKS support is compiled in. */
+int vault_luks_available(void);
+
+/* Format a device as LUKS2 with AES-XTS-plain64.
+ * Returns 0 on success, -1 on failure. */
+int vault_luks_format(const char *device, const char *passphrase);
+
+/* Format a device with a random key (for encrypt-before-wipe).
+ * The key is discarded -- data is irrecoverably encrypted.
+ * Returns 0 on success, -1 on failure. */
+int vault_luks_format_random_key(const char *device);
+
+/* Open (unlock) a LUKS device.
+ * Returns 0 on success, -1 on failure. */
 int vault_luks_open(const char *device, const char *passphrase,
                      const char *dm_name);
 
-/*
- * Close (lock) a LUKS device.
- * Returns 0 on success, -1 on failure or unavailable.
- */
+/* Close a LUKS device.
+ * Returns 0 on success, -1 on failure. */
 int vault_luks_close(const char *dm_name);
 
-/*
- * Mount the unlocked LUKS volume.
- * Returns 0 on success, -1 on failure or unavailable.
- */
+/* Mount a device-mapper device at mount_point.
+ * Returns 0 on success, -1 on failure. */
 int vault_luks_mount(const char *dm_name, const char *mount_point);
 
-/*
- * Unmount the LUKS volume.
- * Returns 0 on success, -1 on failure or unavailable.
- */
+/* Unmount a mount point.
+ * Returns 0 on success, -1 on failure. */
 int vault_luks_unmount(const char *mount_point);
-
-/*
- * Format a device as LUKS with the given passphrase.
- * WARNING: Destroys all data on the device.
- * Returns 0 on success, -1 on failure or unavailable.
- */
-int vault_luks_format(const char *device, const char *passphrase);
-
-/*
- * Format a device as LUKS with a random key (for dead man's switch).
- * The key is generated from vault_platform_random() and never stored.
- * This effectively makes the existing data permanently unrecoverable.
- * Returns 0 on success, -1 on failure or unavailable.
- */
-int vault_luks_format_random_key(const char *device);
-
-/*
- * Check if a device is a LUKS device.
- * Returns 1 if LUKS, 0 if not, -1 on error or unavailable.
- */
-int vault_luks_is_luks(const char *device);
-
-/*
- * Check if LUKS support is available at compile time.
- * Returns 1 if available, 0 if not.
- */
-int vault_luks_available(void);
 
 #endif /* VAULT_LUKS_H */

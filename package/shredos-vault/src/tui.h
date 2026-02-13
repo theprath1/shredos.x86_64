@@ -1,65 +1,64 @@
+/*
+ * tui.h -- Terminal UI Interface Contract
+ *
+ * Three backends: ncurses, VT100 (raw escape codes), Win32 console.
+ * Only one is compiled based on HAVE_NCURSES / VAULT_PLATFORM_WINDOWS.
+ *
+ * Copyright 2025 -- GPL-2.0+
+ */
+
 #ifndef VAULT_TUI_H
 #define VAULT_TUI_H
 
 #include "config.h"
-#include <stdbool.h>
+#include <stdarg.h>
 
-/* TUI screen identifiers */
-typedef enum {
-    TUI_SCREEN_LOGIN,
-    TUI_SCREEN_SETUP,
-    TUI_SCREEN_SUCCESS,
-    TUI_SCREEN_DEADMAN_WARNING,
-    TUI_SCREEN_WIPING,
-} tui_screen_t;
-
-/* Initialize ncurses TUI. Returns 0 on success. */
+/* Initialise the TUI. Returns 0 on success. */
 int vault_tui_init(void);
 
-/* Shutdown ncurses TUI. */
+/* Shut down the TUI and restore terminal state. */
 void vault_tui_shutdown(void);
 
-/* Draw the login screen and prompt for password.
- * password_out must be at least 256 bytes.
+/* Show the login screen and read password.
  * Returns number of chars read, or -1 on error. */
-int vault_tui_login_screen(const vault_config_t *cfg, char *password_out,
-                            size_t password_size);
+int vault_tui_login_screen(const vault_config_t *cfg,
+                            char *password_out, size_t password_size);
 
-/* Draw the setup screen. Returns 0 on success. */
+/* Run the first-time setup wizard. Returns 0 on success, -1 on cancel. */
 int vault_tui_setup_screen(vault_config_t *cfg);
 
-/* Draw success screen (volume unlocked). Waits for keypress. */
+/* Show the "authentication successful" screen. Waits for keypress. */
 void vault_tui_success_screen(const vault_config_t *cfg);
 
-/* Draw dead man's switch warning with countdown.
- * countdown_seconds: seconds to display before returning. */
+/* Show the dead man's switch warning with countdown. */
 void vault_tui_deadman_warning(int countdown_seconds);
 
-/* Draw wiping-in-progress screen. */
+/* Show the wipe-in-progress screen. */
 void vault_tui_wiping_screen(const char *device, const char *algorithm_name);
 
-/* Display a status message on the current screen. */
+/* Display a status message. */
 void vault_tui_status(const char *fmt, ...);
 
 /* Display an error message and wait for keypress. */
 void vault_tui_error(const char *fmt, ...);
 
-/* Prompt user to select a device from available block devices.
- * device_out must be at least VAULT_CONFIG_MAX_PATH bytes.
- * Returns 0 on success, -1 if cancelled. */
+/* Prompt user to select a block device.
+ * Returns 0 on success, -1 on cancel. */
 int vault_tui_select_device(char *device_out, size_t device_size);
 
 /* Prompt user to enter and confirm a new password.
- * password_out must be at least 256 bytes.
- * Returns 0 on success, -1 if cancelled. */
+ * Returns 0 on success, -1 on cancel. */
 int vault_tui_new_password(char *password_out, size_t password_size);
 
-/* Prompt user to select wipe algorithm.
- * Returns selected algorithm. */
+/* Prompt user to select a wipe algorithm. */
 wipe_algorithm_t vault_tui_select_algorithm(void);
 
-/* Prompt user to set max attempts threshold.
- * Returns the threshold value (1-99). */
+/* Prompt user to set the failure threshold (1-99). */
 int vault_tui_set_threshold(void);
+
+/* Generic menu selection.
+ * Returns selected index (0-based), or -1 on cancel. */
+int vault_tui_menu_select(const char *title, const char **labels,
+                           int count, int default_sel);
 
 #endif /* VAULT_TUI_H */

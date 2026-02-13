@@ -1,62 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
     "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!--
-  ShredOS Vault LaunchDaemon for macOS
-
-  Runs shredos-vault at boot before the login window appears.
-  Uses VT100 TUI on /dev/console for authentication.
-  If authentication fails, the dead man's switch is triggered.
-
-  Install to: /Library/LaunchDaemons/com.shredos.vault-gate.plist
--->
 <plist version="1.0">
 <dict>
-    <!-- Unique identifier -->
     <key>Label</key>
     <string>com.shredos.vault-gate</string>
 
-    <!-- Binary and arguments -->
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/sbin/shredos-vault</string>
+        <string>--initramfs</string>
         <string>--config</string>
         <string>/Library/Application Support/ShredOS-Vault/vault.conf</string>
     </array>
 
-    <!-- Run at boot, before login window -->
     <key>RunAtLoad</key>
     <true/>
 
-    <!-- Run as root -->
-    <key>UserName</key>
-    <string>root</string>
-
-    <!-- Interactive — needs console access -->
-    <key>StandardInPath</key>
+    <key>StandardInputPath</key>
     <string>/dev/console</string>
-    <key>StandardOutPath</key>
+    <key>StandardOutputPath</key>
     <string>/dev/console</string>
     <key>StandardErrorPath</key>
     <string>/var/log/shredos-vault.log</string>
 
-    <!-- Keep alive — restart if crashes -->
     <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-    </dict>
-
-    <!-- Run before login window -->
-    <key>POSIXSpawnType</key>
-    <string>Interactive</string>
-
-    <!-- Timeout: 0 = no timeout (wait indefinitely for auth) -->
-    <key>TimeOut</key>
-    <integer>0</integer>
-
-    <!-- Don't throttle restarts -->
-    <key>ThrottleInterval</key>
-    <integer>1</integer>
+    <false/>
 </dict>
 </plist>

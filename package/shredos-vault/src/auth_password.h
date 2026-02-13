@@ -1,21 +1,22 @@
+/*
+ * auth_password.h -- Password Authentication (SHA-512)
+ *
+ * Copyright 2025 -- GPL-2.0+
+ */
+
 #ifndef VAULT_AUTH_PASSWORD_H
 #define VAULT_AUTH_PASSWORD_H
 
-#include "auth.h"
+#include <stddef.h>
 
-/*
- * Verify password against stored SHA-512 hash.
- * Prompts user via TUI and returns result.
- */
-auth_result_t vault_auth_password_verify(const vault_config_t *cfg,
-                                          const char *input);
+/* Hash a password with SHA-512 and random salt.
+ * Writes the full $6$salt$hash string into hash_out.
+ * Returns 0 on success, -1 on failure. */
+int vault_auth_password_hash(const char *password,
+                              char *hash_out, size_t hash_out_size);
 
-/*
- * Hash a plaintext password using SHA-512 with salt.
- * Stores result in hash_out (must be at least 256 bytes).
- * Returns 0 on success.
- */
-int vault_auth_password_hash(const char *password, char *hash_out,
-                              size_t hash_out_size);
+/* Verify a password against a stored hash.
+ * Returns 1 if match, 0 if no match. */
+int vault_auth_password_verify(const char *password, const char *stored_hash);
 
 #endif /* VAULT_AUTH_PASSWORD_H */

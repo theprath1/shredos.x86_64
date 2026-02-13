@@ -1,12 +1,8 @@
 #!/bin/sh
 # initramfs-tools hook for ShredOS Vault
 #
+# Copies the vault binary, config, and required libraries into the initramfs.
 # Install location: /etc/initramfs-tools/hooks/shredos-vault
-# Copies shredos-vault binary, config, and dependencies into initramfs.
-#
-# copy_exec automatically copies shared library dependencies (.so files).
-#
-# After installing, rebuild initramfs: update-initramfs -u
 
 PREREQ=""
 
@@ -23,37 +19,24 @@ esac
 
 . /usr/share/initramfs-tools/hook-functions
 
-# Copy shredos-vault binary (auto-copies .so dependencies)
-copy_exec /usr/sbin/shredos-vault /usr/sbin/shredos-vault
-
-# Copy cryptsetup (should already be there via cryptroot hook)
-if [ -x /sbin/cryptsetup ]; then
-    copy_exec /sbin/cryptsetup /sbin/cryptsetup
+# Copy the vault binary
+if [ -x /usr/sbin/shredos-vault ]; then
+    copy_exec /usr/sbin/shredos-vault /usr/sbin/shredos-vault
 fi
 
-# Copy nwipe if available
-if [ -x /usr/bin/nwipe ]; then
-    copy_exec /usr/bin/nwipe /usr/bin/nwipe
-elif [ -x /usr/sbin/nwipe ]; then
-    copy_exec /usr/sbin/nwipe /usr/sbin/nwipe
-fi
-
-# Copy config file
+# Copy the config file
 if [ -f /etc/shredos-vault/vault.conf ]; then
     mkdir -p "${DESTDIR}/etc/shredos-vault"
-    cp /etc/shredos-vault/vault.conf "${DESTDIR}/etc/shredos-vault/vault.conf"
-    chmod 600 "${DESTDIR}/etc/shredos-vault/vault.conf"
+    cp /etc/shredos-vault/vault.conf "${DESTDIR}/etc/shredos-vault/"
 fi
 
-# Copy terminfo entries for ncurses TUI
-for term in linux xterm xterm-256color vt100; do
-    for dir in /usr/share/terminfo /lib/terminfo /etc/terminfo; do
-        first_char=$(echo "$term" | cut -c1)
-        if [ -f "$dir/$first_char/$term" ]; then
-            mkdir -p "${DESTDIR}/$dir/$first_char"
-            cp "$dir/$first_char/$term" "${DESTDIR}/$dir/$first_char/$term"
-        fi
-    done
-done
-
-exit 0
+# Copy required shared libraries (auto-detected by copy_exec above)
+# Explicitly copy ncurses terminfo if available
+if [ -d /lib/terminfo ]; then
+    mkdir -p "${DESTDIR}/lib/terminfo/l"
+    cp /lib/terminfo/l/linux "${DESTDIR}/lib/terminfo/l/" 2>/dev/null || true
+fi
+if [ -d /usr/share/terminfo ]; then
+    mkdir -p "${DESTDIR}/usr/share/terminfo/l"
+    cp /usr/share/terminfo/l/linux "${DESTDIR}/usr/share/terminfo/l/" 2>/dev/null || true
+fi

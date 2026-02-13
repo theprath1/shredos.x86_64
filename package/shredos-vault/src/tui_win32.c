@@ -1,138 +1,206 @@
 /*
- * tui_win32.c — Windows TUI Stub Backend
+ * tui_win32.c -- Windows Console TUI Backend
  *
- * On Windows, the Credential Provider DLL handles the login UI.
- * This file provides stub implementations of tui.h so the vault
- * code compiles, with status/error messages logged to a file.
+ * Uses Windows Console API for the vault UI.
  *
- * The setup wizard uses basic console I/O (stdio).
- *
- * Copyright 2025 — GPL-2.0+
+ * Copyright 2025 -- GPL-2.0+
  */
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef VAULT_PLATFORM_WINDOWS
 
 #include "tui.h"
+#include "auth_password.h"
 #include "platform.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 
-static FILE *log_fp = NULL;
+static HANDLE hConsole;
+static WORD origAttrs;
 
-static void win_log(const char *fmt, ...)
+#define ATTR_NORMAL  (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
+#define ATTR_TITLE   (FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY)
+#define ATTR_ERROR   (FOREGROUND_RED | FOREGROUND_INTENSITY)
+#define ATTR_SUCCESS (FOREGROUND_GREEN | FOREGROUND_INTENSITY)
+#define ATTR_DANGER  (BACKGROUND_RED | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY)
+#define ATTR_INPUT   (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY)
+#define ATTR_STATUS  (BACKGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)
+
+static void con_clear(void)
 {
-    if (!log_fp) {
-        log_fp = fopen(VAULT_LOG_PATH_DEFAULT, "a");
-        if (!log_fp) return;
-    }
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(hConsole, &csbi);
+    DWORD size = csbi.dwSize.X * csbi.dwSize.Y;
+    COORD origin = {0, 0};
+    DWORD written;
+    FillConsoleOutputCharacterA(hConsole, ' ', size, origin, &written);
+    FillConsoleOutputAttribute(hConsole, origAttrs, size, origin, &written);
+    SetConsoleCursorPosition(hConsole, origin);
+}
 
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(log_fp, fmt, ap);
-    va_end(ap);
-    fprintf(log_fp, "\n");
-    fflush(log_fp);
+static void con_goto(int row, int col)
+{
+    COORD pos = {(SHORT)col, (SHORT)row};
+    SetConsoleCursorPosition(hConsole, pos);
 }
 
 int vault_tui_init(void)
 {
-    log_fp = fopen(VAULT_LOG_PATH_DEFAULT, "a");
-    win_log("vault_tui_init (Win32 stub)");
+    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(hConsole, &csbi);
+    origAttrs = csbi.wAttributes;
+
+    /* Disable Ctrl+C */
+    SetConsoleCtrlHandler(NULL, TRUE);
+    con_clear();
     return 0;
 }
 
 void vault_tui_shutdown(void)
 {
-    win_log("vault_tui_shutdown");
-    if (log_fp) {
-        fclose(log_fp);
-        log_fp = NULL;
-    }
+    SetConsoleTextAttribute(hConsole, origAttrs);
+    con_clear();
 }
 
-int vault_tui_login_screen(const vault_config_t *cfg, char *password_out,
-                            size_t password_size)
+int vault_tui_login_screen(const vault_config_t *cfg,
+                            char *password_out, size_t password_size)
 {
-    /* Console mode: prompt via stdin/stdout */
-    printf("ShredOS Vault - Password Authentication\n");
-    printf("Attempt %d of %d\n", cfg->current_attempts + 1, cfg->max_attempts);
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_TITLE);
+    con_goto(2, 10);
+    printf("ShredOS Vault - Authentication");
+
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+    con_goto(5, 10);
+    printf("Attempt %d of %d", cfg->current_attempts + 1, cfg->max_attempts);
+
+    con_goto(7, 10);
     printf("Password: ");
-    fflush(stdout);
 
-    if (!fgets(password_out, (int)password_size, stdin))
-        return -1;
+    /* Read password with masking */
+    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD oldMode;
+    GetConsoleMode(hInput, &oldMode);
+    SetConsoleMode(hInput, oldMode & ~ENABLE_ECHO_INPUT);
 
-    /* Strip newline */
-    password_out[strcspn(password_out, "\r\n")] = '\0';
-    return (int)strlen(password_out);
+    int pos = 0;
+    int max = (int)password_size - 1;
+    while (1) {
+        DWORD nread;
+        char ch;
+        ReadConsoleA(hInput, &ch, 1, &nread, NULL);
+        if (ch == '\r' || ch == '\n') break;
+        if (ch == '\b' && pos > 0) {
+            pos--;
+            printf("\b \b");
+        } else if (pos < max && ch >= 32 && ch <= 126) {
+            password_out[pos++] = ch;
+            printf("*");
+        }
+    }
+    password_out[pos] = '\0';
+    SetConsoleMode(hInput, oldMode);
+    printf("\n");
+    return pos;
 }
 
 int vault_tui_setup_screen(vault_config_t *cfg)
 {
-    printf("\n=== ShredOS Vault Setup ===\n\n");
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_TITLE);
+    con_goto(2, 10);
+    printf("ShredOS Vault - Setup Wizard");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
 
-    /* Device */
-    printf("Target device (e.g., \\\\.\\PhysicalDrive0): ");
-    fflush(stdout);
-    if (!fgets(cfg->target_device, sizeof(cfg->target_device), stdin))
+    if (vault_tui_select_device(cfg->target_device,
+                                 sizeof(cfg->target_device)) != 0)
         return -1;
-    cfg->target_device[strcspn(cfg->target_device, "\r\n")] = '\0';
 
-    /* Password */
     char password[256];
     if (vault_tui_new_password(password, sizeof(password)) != 0)
         return -1;
-
-    extern int vault_auth_password_hash(const char *, char *, size_t);
     vault_auth_password_hash(password, cfg->password_hash,
                               sizeof(cfg->password_hash));
     vault_secure_memzero(password, sizeof(password));
 
-    /* Threshold */
     cfg->max_attempts = vault_tui_set_threshold();
-
-    /* Algorithm */
     cfg->wipe_algorithm = vault_tui_select_algorithm();
 
-    printf("\nSetup complete!\n");
-    return 0;
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_DANGER);
+    con_goto(5, 5);
+    printf("WARNING: Vault will protect %s", cfg->target_device);
+    con_goto(7, 5);
+    printf("Press 'Y' to confirm: ");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+
+    DWORD nread;
+    char ch;
+    ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &nread, NULL);
+    return (ch == 'Y' || ch == 'y') ? 0 : -1;
 }
 
 void vault_tui_success_screen(const vault_config_t *cfg)
 {
-    printf("\nAUTHENTICATION SUCCESSFUL\n");
-    printf("Volume mounted at: %s\n", cfg->mount_point);
-    printf("Press Enter to lock and shutdown...\n");
-    fflush(stdout);
-    getchar();
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_SUCCESS);
+    con_goto(5, 10);
+    printf("AUTHENTICATION SUCCESSFUL");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+    con_goto(7, 10);
+    printf("Volume mounted at: %s", cfg->mount_point);
+    con_goto(9, 10);
+    printf("Press 'q' to lock and shutdown.");
+
+    DWORD nread;
+    char ch;
+    while (1) {
+        ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &nread, NULL);
+        if (ch == 'q' || ch == 'Q') break;
+    }
 }
 
 void vault_tui_deadman_warning(int countdown_seconds)
 {
-    printf("\n!!! DEAD MAN'S SWITCH ACTIVATED !!!\n");
-    printf("MAXIMUM AUTHENTICATION ATTEMPTS EXCEEDED\n");
-    printf("Target drive will be ENCRYPTED and WIPED\n\n");
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_DANGER);
+    con_goto(5, 5);
+    printf("!!! DEAD MAN'S SWITCH ACTIVATED !!!");
+    con_goto(7, 5);
+    printf("MAXIMUM AUTHENTICATION ATTEMPTS EXCEEDED");
+    con_goto(9, 5);
+    printf("Target drive will be ENCRYPTED and WIPED");
+    con_goto(11, 5);
+    printf("THIS CANNOT BE STOPPED OR REVERSED");
 
     for (int i = countdown_seconds; i > 0; i--) {
-        printf("Starting in %d seconds...\r", i);
-        fflush(stdout);
+        con_goto(14, 5);
+        printf("Starting in %d seconds...  ", i);
         Sleep(1000);
     }
-    printf("INITIATING WIPE SEQUENCE\n");
-    win_log("DEAD MAN'S SWITCH TRIGGERED");
+    con_goto(14, 5);
+    printf("INITIATING WIPE SEQUENCE     ");
+    Sleep(1000);
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
 }
 
 void vault_tui_wiping_screen(const char *device, const char *algorithm_name)
 {
-    printf("\nWIPING IN PROGRESS\n");
-    printf("Device:    %s\n", device);
-    printf("Algorithm: %s\n", algorithm_name);
-    printf("Do NOT power off.\n");
-    fflush(stdout);
-    win_log("Wipe started: %s with %s", device, algorithm_name);
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_ERROR);
+    con_goto(5, 10);
+    printf("WIPING IN PROGRESS");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+    con_goto(7, 10);
+    printf("Device:    %s", device);
+    con_goto(8, 10);
+    printf("Algorithm: %s", algorithm_name);
+    con_goto(10, 10);
+    printf("Do NOT power off.");
 }
 
 void vault_tui_status(const char *fmt, ...)
@@ -142,10 +210,10 @@ void vault_tui_status(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-
-    printf("[STATUS] %s\n", buf);
-    fflush(stdout);
-    win_log("[STATUS] %s", buf);
+    SetConsoleTextAttribute(hConsole, ATTR_STATUS);
+    con_goto(23, 0);
+    printf("%-79s", buf);
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
 }
 
 void vault_tui_error(const char *fmt, ...)
@@ -155,44 +223,93 @@ void vault_tui_error(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-
-    printf("[ERROR] %s\n", buf);
-    fflush(stdout);
-    win_log("[ERROR] %s", buf);
+    SetConsoleTextAttribute(hConsole, ATTR_ERROR);
+    con_goto(12, 10);
+    printf("ERROR: %s", buf);
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+    con_goto(14, 10);
+    printf("Press any key...");
+    DWORD nread;
+    char ch;
+    ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &nread, NULL);
 }
 
 int vault_tui_select_device(char *device_out, size_t device_size)
 {
-    printf("Enter target device (e.g., \\\\.\\PhysicalDrive0): ");
-    fflush(stdout);
-    if (!fgets(device_out, (int)device_size, stdin))
+    /* Windows: list physical drives */
+    const char *labels[16];
+    char bufs[16][64];
+    int count = 0;
+
+    for (int i = 0; i < 16; i++) {
+        char path[64];
+        snprintf(path, sizeof(path), "\\\\.\\PhysicalDrive%d", i);
+        HANDLE h = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                               NULL, OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE) continue;
+        CloseHandle(h);
+        snprintf(bufs[count], sizeof(bufs[count]), "PhysicalDrive%d", i);
+        labels[count] = bufs[count];
+        count++;
+    }
+
+    if (count == 0) {
+        vault_tui_error("No drives found!");
         return -1;
-    device_out[strcspn(device_out, "\r\n")] = '\0';
-    return device_out[0] ? 0 : -1;
+    }
+
+    int sel = vault_tui_menu_select("Select target drive:", labels, count, 0);
+    if (sel < 0) return -1;
+
+    snprintf(device_out, device_size, "\\\\.\\PhysicalDrive%d", sel);
+    return 0;
 }
 
 int vault_tui_new_password(char *password_out, size_t password_size)
 {
+    /* Simplified for Win32 console */
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_TITLE);
+    con_goto(3, 10);
+    printf("Set Password");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+
     char pass1[256], pass2[256];
     while (1) {
-        printf("Enter new password: ");
-        fflush(stdout);
-        if (!fgets(pass1, sizeof(pass1), stdin)) return -1;
-        pass1[strcspn(pass1, "\r\n")] = '\0';
+        con_goto(5, 10);
+        printf("Password: ");
+        HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD oldMode;
+        GetConsoleMode(hIn, &oldMode);
+        SetConsoleMode(hIn, oldMode & ~ENABLE_ECHO_INPUT);
 
-        printf("Confirm password: ");
-        fflush(stdout);
-        if (!fgets(pass2, sizeof(pass2), stdin)) return -1;
-        pass2[strcspn(pass2, "\r\n")] = '\0';
+        int p = 0;
+        DWORD nr;
+        char ch;
+        while (1) {
+            ReadConsoleA(hIn, &ch, 1, &nr, NULL);
+            if (ch == '\r') break;
+            if (ch == '\b' && p > 0) { p--; printf("\b \b"); }
+            else if (p < 255 && ch >= 32) { pass1[p++] = ch; printf("*"); }
+        }
+        pass1[p] = '\0';
+        printf("\n");
 
-        if (strlen(pass1) == 0) {
-            printf("Password cannot be empty!\n");
-            continue;
+        con_goto(7, 10);
+        printf("Confirm:  ");
+        int p2 = 0;
+        while (1) {
+            ReadConsoleA(hIn, &ch, 1, &nr, NULL);
+            if (ch == '\r') break;
+            if (ch == '\b' && p2 > 0) { p2--; printf("\b \b"); }
+            else if (p2 < 255 && ch >= 32) { pass2[p2++] = ch; printf("*"); }
         }
-        if (strcmp(pass1, pass2) != 0) {
-            printf("Passwords do not match!\n");
-            continue;
-        }
+        pass2[p2] = '\0';
+        SetConsoleMode(hIn, oldMode);
+        printf("\n");
+
+        if (p == 0) { vault_tui_error("Password cannot be empty!"); continue; }
+        if (strcmp(pass1, pass2) != 0) { vault_tui_error("Mismatch!"); continue; }
 
         strncpy(password_out, pass1, password_size - 1);
         password_out[password_size - 1] = '\0';
@@ -204,34 +321,78 @@ int vault_tui_new_password(char *password_out, size_t password_size)
 
 wipe_algorithm_t vault_tui_select_algorithm(void)
 {
-    printf("\nSelect wipe algorithm:\n");
-    printf("  0: Gutmann (35-pass)\n");
-    printf("  1: DoD 5220.22-M (7-pass)\n");
-    printf("  2: DoD Short (3-pass)\n");
-    printf("  3: PRNG Random\n");
-    printf("  4: Zero Fill\n");
-    printf("  5: Verify Only\n");
-    printf("Choice [0]: ");
-    fflush(stdout);
-
-    char buf[16];
-    if (!fgets(buf, sizeof(buf), stdin)) return WIPE_GUTMANN;
-    int choice = atoi(buf);
-    if (choice < 0 || choice >= WIPE_COUNT) choice = 0;
-    return (wipe_algorithm_t)choice;
+    const char *names[] = {
+        "Gutmann (35-pass)", "DoD 5220.22-M (7-pass)",
+        "DoD Short (3-pass)", "PRNG Stream", "Zero Fill",
+    };
+    int sel = vault_tui_menu_select("Select wipe algorithm:", names, 5, 0);
+    return (sel >= 0) ? (wipe_algorithm_t)sel : WIPE_GUTMANN;
 }
 
 int vault_tui_set_threshold(void)
 {
-    printf("Max failed attempts before wipe [3]: ");
-    fflush(stdout);
+    con_clear();
+    SetConsoleTextAttribute(hConsole, ATTR_TITLE);
+    con_goto(3, 10);
+    printf("Set Failure Threshold (1-99)");
+    SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+    con_goto(5, 10);
+    printf("Enter threshold: ");
 
-    char buf[16];
-    if (!fgets(buf, sizeof(buf), stdin)) return 3;
-    int val = atoi(buf);
-    if (val < 1) val = 3;
-    if (val > 99) val = 99;
-    return val;
+    char buf[8];
+    DWORD nr;
+    ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), buf, sizeof(buf) - 1, &nr, NULL);
+    buf[nr] = '\0';
+    int n = atoi(buf);
+    if (n < 1) n = 1;
+    if (n > 99) n = 99;
+    return n;
 }
 
-#endif /* _WIN32 */
+int vault_tui_menu_select(const char *title, const char **labels,
+                           int count, int default_sel)
+{
+    int sel = default_sel;
+    if (sel < 0 || sel >= count) sel = 0;
+
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD oldMode;
+    GetConsoleMode(hIn, &oldMode);
+    SetConsoleMode(hIn, ENABLE_PROCESSED_INPUT);
+
+    while (1) {
+        con_clear();
+        SetConsoleTextAttribute(hConsole, ATTR_TITLE);
+        con_goto(2, 5);
+        printf("%s", title);
+        SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+
+        for (int i = 0; i < count; i++) {
+            con_goto(4 + i, 7);
+            if (i == sel)
+                SetConsoleTextAttribute(hConsole,
+                    BACKGROUND_BLUE | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+            printf("  %s  ", labels[i]);
+            SetConsoleTextAttribute(hConsole, ATTR_NORMAL);
+        }
+
+        con_goto(5 + count, 5);
+        printf("UP/DOWN, ENTER to confirm, 'q' to cancel");
+
+        INPUT_RECORD rec;
+        DWORD nr;
+        ReadConsoleInputA(hIn, &rec, 1, &nr);
+        if (rec.EventType == KEY_EVENT && rec.Event.KeyEvent.bKeyDown) {
+            WORD vk = rec.Event.KeyEvent.wVirtualKeyCode;
+            if (vk == VK_UP && sel > 0) sel--;
+            else if (vk == VK_DOWN && sel < count - 1) sel++;
+            else if (vk == VK_RETURN) { SetConsoleMode(hIn, oldMode); return sel; }
+            else if (rec.Event.KeyEvent.uChar.AsciiChar == 'q') {
+                SetConsoleMode(hIn, oldMode);
+                return -1;
+            }
+        }
+    }
+}
+
+#endif /* VAULT_PLATFORM_WINDOWS */
