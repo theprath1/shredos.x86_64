@@ -1,7 +1,7 @@
 <!-- ShredOS LOGO -->
 <br />
 <p align="left">
-  <a href="https://github.com/PartialVolume/shredos.x86_64/">
+  <a href="https://github.com/theprath1/shredos.x86_64/">
     <img src="images/shred_db.png" alt="Logo" width="160" height="160">
   </a>
 </p>
@@ -14,18 +14,18 @@
 
 ## For PCs, Servers and Macs with Intel and AMD 64 & 32 bit processors
 
-#### As well as a 64bit versions, also included are 32bit .img & .iso images of ShredOS that will run on both 32bit and 64bit processors, see [Release Assets](https://github.com/PartialVolume/shredos.x86_64/releases) and the table of download links below. For those that wish to build their own ShredOS from source, rather than just burn the .img/.iso images, follow the build instructions and make use of the supplied build configurations. Please note the additional information provided to run ShredOS on Apple systems. 
+#### As well as a 64bit versions, also included are 32bit .img & .iso images of ShredOS that will run on both 32bit and 64bit processors, see [Release Assets](https://github.com/theprath1/shredos.x86_64/releases) and the table of download links below. For those that wish to build their own ShredOS from source, rather than just burn the .img/.iso images, follow the build instructions and make use of the supplied build configurations. Please note the additional information provided to run ShredOS on Apple systems.
 		
 #### For those that just want to get on with using ShredOS, you can download the pre-built .img or .iso images and burn them straight to USB flash drive or CD/DVD. Boot from the USB flash drive or CD/DVD and nwipe will appear ready for you to select your preferred wipe options.
-[![GitHub all releases](https://img.shields.io/github/downloads/PartialVolume/shredos.x86_64/total?label=Total%20downloads%20x86_64%20all%20releases,%2064%20and%2032bit%20code,%20.iso%20and%20.img%20&style=plastic)](https://github.com/PartialVolume/shredos.x86_64/releases)
+[![GitHub all releases](https://img.shields.io/github/downloads/theprath1/shredos.x86_64/total?label=Total%20downloads%20x86_64%20all%20releases,%2064%20and%2032bit%20code,%20.iso%20and%20.img%20&style=plastic)](https://github.com/theprath1/shredos.x86_64/releases)
 
-### ShredOS version v2025.11_28_x86-64_0.40 [(Latest release - Release notes and downloads)](https://github.com/PartialVolume/shredos.x86_64/releases/tag/v2025.11_28_x86-64_0.40)
+### ShredOS version v2025.11_29_x86-64_0.40 [(Latest release - Release notes and downloads)](https://github.com/theprath1/shredos.x86_64/releases/tag/v2025.11_29_x86-64_0.40)
 
 ## Download the Latest ShredOS .img and .iso files for burning to USB flash drives and CD-R/DVD-R.
 
-NOTE! There may be pre-release versions that are newer than the latest versions listed below, To see all versions, [pre-release & latest](https://github.com/PartialVolume/shredos.x86_64/releases) The latest versions contain a full set of .img & .iso images in 32bit & 64bit while the pre-releases generally only contain a 64bit .img. Which should you use? Well, unless you need either 32 bit images or .iso images I would tend to download the very latest pre-release. Even the pre-releases are subjected to a fair amount of testing before they become a pre-release.
+NOTE! There may be pre-release versions that are newer than the latest versions listed below, To see all versions, [pre-release & latest](https://github.com/theprath1/shredos.x86_64/releases) The latest versions contain a full set of .img & .iso images in 32bit & 64bit while the pre-releases generally only contain a 64bit .img. Which should you use? Well, unless you need either 32 bit images or .iso images I would tend to download the very latest pre-release. Even the pre-releases are subjected to a fair amount of testing before they become a pre-release.
 
-### For all releases including latest and more recent pre-releases [releases](https://github.com/PartialVolume/shredos.x86_64/releases)
+### For all releases including latest and more recent pre-releases [releases](https://github.com/theprath1/shredos.x86_64/releases)
 
 Note for versions **after** _v2024.11_27_x86-64_0.38_: The .img files for burning to USB flash drives support both BIOS/UEFI booting, as well as saving of generated PDF reports to the USB flash drive. The .iso image also supports both BIOS/UEFI booting, burning to USB flash drives and CD/DVD-ROM and if you use the `partion-plus` iso, saving of generated PDF reports to the USB flash drive. Use the .img file whenever planning to customize ShredOS (`autonuke` setups, kernel parameters, ...). The .img file also allows direct interaction with the filesystem and modification of the GRUB boot menu, e.g. appending of kernel parameters, which the .iso file does not support due to filesystem constraints.
 
@@ -50,9 +50,9 @@ A certificate can optionally be created for each drive erased, the default is to
    1. [Multi OS with VENTOY](#multi-os-with-ventoy)
    1. [How to edit the ShredOS /EFI/BOOT/grub.cfg and boot/grub.cfg files when using Ventoy with ShredOS .img files](#how-to-edit-the-shredos-efibootgrubcfg-and-bootgrubgrubcfg-files-when-using-ventoy-with-shredos-img-files)
 1. [A word about the MAC Book Pro](#a-word-about-the-mac-book-pro)
-1. [Having trouble with USB adapters not working/hanging, want to buy one that works properly!](https://github.com/PartialVolume/shredos.x86_64/discussions/128#discussion-4906723)
+1. [Having trouble with USB adapters not working/hanging, want to buy one that works properly!](https://github.com/PartialVolume/shredos.x86_64/discussions/128#discussion-4906723) *(upstream)*
 1. [Virtual terminals](#virtual-terminals)
-1. [How to exclude the fat formatted shredos boot drive from nwipe interactive and autonuke modes](https://github.com/PartialVolume/shredos.x86_64?tab=readme-ov-file#how-to-exclude-the-fat-formatted-shredos-boot-drive-from-nwipe-interactive-and-autonuke-modes)
+1. [How to exclude the fat formatted shredos boot drive from nwipe interactive and autonuke modes](#how-to-exclude-the-fat-formatted-shredos-boot-drive-from-nwipe-interactive-and-autonuke-modes)
 1. [How to run nwipe so you can specify nwipe command line options](#how-to-run-nwipe-so-you-can-specify-nwipe-command-line-options)
 1. [How to change the default nwipe options so the change persists between reboots](#how-to-change-the-default-nwipe-options-so-the-change-persists-between-reboots)
 1. [How to set the keyboard map using the loadkeys command (see here for persistent change between reboots](#how-to-set-the-keyboard-map-using-the-loadkeys-command-see-here-for-persistent-change-between-reboots)
@@ -73,15 +73,15 @@ A certificate can optionally be created for each drive erased, the default is to
    1. [Wipe SSD](#wipe-ssd)
    1. [Wipe NVME](#wipe-nvme)
 1. [Compiling shredos and burning to USB stick, the harder way!](#compiling-shredos-and-burning-to-usb-stick-the-harder-way-)
-   1. [Install the following prerequisite software first. Without this software, the make command will fail](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#install-the-following-prerequisite-software-first-without-this-software-the-make-command-will-fail)
-   1. [Download the ShredOS source using the git command and build ShredOS](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#download-the-shredos-source-using-the-git-command-and-build-shredos)
-   1. [Commands to configure buildroot, you will only need to use these if you are making changes to ShredOS](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#commands-to-configure-buildroot-you-will-only-need-to-use-these-if-you-are-making-changes-to-shredos)
-1. [Important ShredOS files and folders when building from source](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#important-shredos-files-and-folders-when-building-from-source)
-	1. [../board/shredos/doimg.sh](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#boardshredosdoimgsh)
-	1. [../board/shredos/version.txt](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#boardshredosversiontxt)
-	1. [../board/shredos/fsoverlay/](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#boardshredosfsoverlay)
-	1. [../board/shredos/fsoverlay/etc/init.d/S40network](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#boardshredosfsoverlayetcinitds40network)
-	1. [../board/shredos/fsoverlay/usr/bin/nwipe_launcher](https://github.com/PartialVolume/shredos.x86_64/blob/master/README.md#boardshredosfsoverlayusrbinnwipe_launcher)
+   1. [Install the following prerequisite software first. Without this software, the make command will fail](#install-the-following-prerequisite-software-first-without-this-software-the-make-command-will-fail)
+   1. [Download the ShredOS source using the git command and build ShredOS](#download-the-shredos-source-using-the-git-clone-command-build-shredos-and-write-to-a-usb-memory-device)
+   1. [Commands to configure buildroot, you will only need to use these if you are making changes to ShredOS](#commands-to-configure-buildroot-you-will-only-need-to-use-these-if-you-are-making-changes-to-shredos)
+1. [Important ShredOS files and folders when building from source](#important-shredos-files-and-folders-when-building-shredos-from-source)
+	1. [../board/shredos/make_img_file.sh](#boardshredosmake_img_filesh)
+	1. [../board/shredos/version.txt](#boardshredosfsoverlayetcshredosversiontxt)
+	1. [../board/shredos/fsoverlay/](#boardshredosfsoverlay)
+	1. [../board/shredos/fsoverlay/etc/init.d/S40network](#boardshredosfsoverlayetcinitds40network)
+	1. [../board/shredos/fsoverlay/usr/bin/nwipe_launcher](#boardshredosfsoverlayusrbinnwipe_launcher)
 	1. [../package/nwipe/](#packagenwipe)
 	1. [../package/nwipe/nwipe.mk](#packagenwipenwipemk)
 	1. [../package/nwipe/nwipe.hash](#packagenwipenwipehash)
@@ -100,15 +100,15 @@ ShredOS supports either 32bit or 64bit processors. You will need to download the
 
 Because ShredOS boots and runs straight from a USB flash drive or DVD/CD, it doesn't matter what operating system already exists on the computer. It will remove all data/directories/operating systems, from the drive or drives you have selected for wiping, leaving a disk with no trace of what originally existed. It will wipe PCs & Intel-based Macs, such as MacBookPros. It doesn't care what operating system previously existed, be it Windows/Mac OSX/Linux/VXWorks. 
 
-ShredOS can be used as a software image and booted via the network using a client PC that supports Preboot execution environment (PXE) via a PXE enabled server. A procedure for creating a simple UEFI PXE server based on Debian/Ubuntu and serving up ShredOS can be found here [#148](https://github.com/PartialVolume/shredos.x86_64/discussions/148)
+ShredOS can be used as a software image and booted via the network using a client PC that supports Preboot execution environment (PXE) via a PXE enabled server. A procedure for creating a simple UEFI PXE server based on Debian/Ubuntu and serving up ShredOS can be found here [#148](https://github.com/PartialVolume/shredos.x86_64/discussions/148) *(upstream)*
 		
 You can also use ShredOS on headless systems or systems with faulty display hardware as it includes a user enabled telnet server. Further details can be found here. [How to wipe drives on headless systems or systems with faulty or missing display hardware or keyboards](#how-to-wipe-drives-on-headless-systems-or-systems-with-faulty-display-hardware-for-use-on-secure-lans-only)
 
-ShredOS includes the latest Nwipe official release, but in addition includes other disk related utilities such as Smartmontools, hdparm, a hexeditor [hexedit](https://linux.die.net/man/1/hexedit), and, the program loadkeys which can be used for [setting the keyboard layout](https://github.com/PartialVolume/shredos.2020.02/blob/master/README.md#how-to-set-the-keyboard-map-using-the-loadkeys-command-see-here-for-persistent-change-between-reboots). Nwipe automatically starts its GUI in the first virtual terminal (ALT-F1), hdparm, smartmontools and hexeditor can be run in the second virtual terminal, (ALT-F2). Nwipe will erase drives using a user-selectable choice of seven methods. hdparm - amongst many of its options - can be used for wiping a drive by issueing [ATA erase commands](https://ata.wiki.kernel.org/index.php/ATA_Secure_Erase) or [SAS erase commands](https://github.com/gms-electronics/formatingguide) interface commands to the firmware of the storrage device. This is a planned feature addition to nwipe.
+ShredOS includes the latest Nwipe official release, but in addition includes other disk related utilities such as Smartmontools, hdparm, a hexeditor [hexedit](https://linux.die.net/man/1/hexedit), and, the program loadkeys which can be used for [setting the keyboard layout](#how-to-set-the-keyboard-map-using-the-loadkeys-command-see-here-for-persistent-change-between-reboots). Nwipe automatically starts its GUI in the first virtual terminal (ALT-F1), hdparm, smartmontools and hexeditor can be run in the second virtual terminal, (ALT-F2). Nwipe will erase drives using a user-selectable choice of seven methods. hdparm - amongst many of its options - can be used for wiping a drive by issueing [ATA erase commands](https://ata.wiki.kernel.org/index.php/ATA_Secure_Erase) or [SAS erase commands](https://github.com/gms-electronics/formatingguide) interface commands to the firmware of the storrage device. This is a planned feature addition to nwipe.
 
-ShredOS boots very quickly and depending upon the host system can boot in as little as 2 seconds (typically 4 to 6 seconds) on modern hardware, while on an old Pentium4 may take 40+ seconds. Nwipe automatically starts in GUI mode and will list the disks present on the host system. In fact, on version of ShredOS earlier than [v2023.08.2_25.0_x86-64_0.35](https://github.com/PartialVolume/shredos.x86_64/releases/tag/v2023.08.2_25.0_x86-64_0.35) nwipe can launch so fast that the USB devices have not yet initialised so the first time nwipe appears it may not show any USB drives, this behaviour has been fixed from version v2023.08.2_25.0_x86-64_0.35 onwards so there will usually be a delay of about 5-10 seconds while the USB devices are initialised. On older versions of ShredOS you would use Control-C to exit and restart nwipe to see any attached USB devices. You can then select the methods by which you want to securely erase the disk/s. Nwipe is able to simultanuosly wipe multiple disks using a threaded software architecture. I have simultaneously wiped 28 loop devices in tests and know of instances where it's been used to simultaneuosly wipe upwards of fifty drives on a rack server.
+ShredOS boots very quickly and depending upon the host system can boot in as little as 2 seconds (typically 4 to 6 seconds) on modern hardware, while on an old Pentium4 may take 40+ seconds. Nwipe automatically starts in GUI mode and will list the disks present on the host system. In fact, on version of ShredOS earlier than [v2023.08.2_25.0_x86-64_0.35](https://github.com/theprath1/shredos.x86_64/releases/tag/v2023.08.2_25.0_x86-64_0.35) nwipe can launch so fast that the USB devices have not yet initialised so the first time nwipe appears it may not show any USB drives, this behaviour has been fixed from version v2023.08.2_25.0_x86-64_0.35 onwards so there will usually be a delay of about 5-10 seconds while the USB devices are initialised. On older versions of ShredOS you would use Control-C to exit and restart nwipe to see any attached USB devices. You can then select the methods by which you want to securely erase the disk/s. Nwipe is able to simultanuosly wipe multiple disks using a threaded software architecture. I have simultaneously wiped 28 loop devices in tests and know of instances where it's been used to simultaneuosly wipe upwards of fifty drives on a rack server.
 		
-The vanilla version of ShredOS boots into nwipe's GUI and shows the available discs that can then be selected for wiping. It does not autonuke your discs at launch, however it is capable of doing that, if you edit the grub.cfg file and specify the appropriate nwipe command line option. Details of configuring nwipe's launch behaviour is shown below [How to run nwipe so you can specify nwipe command line options](https://github.com/PartialVolume/shredos.2020.02/blob/master/README.md#how-to-run-nwipe-so-you-can-specify-nwipe-command-line-options)
+The vanilla version of ShredOS boots into nwipe's GUI and shows the available discs that can then be selected for wiping. It does not autonuke your discs at launch, however it is capable of doing that, if you edit the grub.cfg file and specify the appropriate nwipe command line option. Details of configuring nwipe's launch behaviour is shown below [How to run nwipe so you can specify nwipe command line options](#how-to-run-nwipe-so-you-can-specify-nwipe-command-line-options)
 
 ## What do I do after I've erased everything on my disk? What is actually erased?
 
@@ -445,7 +445,7 @@ menuentry "shredos" {
 Nwipe creates a log file and one or more PDF certificates which show details of the disks and/or system being wiped. ShredOS creates a transfer.log and copy of the dmesg output which can be used for diagnostics. These files are automatically saved to the USB flash drive, if the user booted from a USB flash drive. Alternatively, if ShredOS has been configured, using the kernel command line options `shredos_output="..."`, `lftp="..."` in grub.cfg to output these file to a ftp or tftp server then the PDF & log files will be sent there instead. Please be aware the the lftp option is deprecated and may be removed in a new version. `shredos_output="..."` currently supports ftp and tftp with sftp to be added in a new release. Described below are details of how you can configure ShredOS to output log and PDF files automatically to network servers.
 
 #### What is the nwipe log file
-The nwipe that is automatically launched in the first virtual terminal ALT-F1, creates a log file that contains the details of the wipe/s and a summary table that shows successfull erasure or failure. The file is time stamped within it's name. A new timestamped log file is created each time nwipe is started. The files can be found in the / directory. A example being nwipe_log_20200418-084910.txt. As of version [v2021.08.2_23_x86-64_0.34](https://github.com/PartialVolume/shredos.x86_64/releases/tag/v2021.08.2_23_x86-64_0.34) ShredOS will automatically copy the nwipe log files to the first FAT32 partition it finds, which is normally the ShredOS USB flash drive. In addition you can manually copy the log files or send them to a ftp server on your local area network. Both methods are described below starting with manually writing to a USB storage device.
+The nwipe that is automatically launched in the first virtual terminal ALT-F1, creates a log file that contains the details of the wipe/s and a summary table that shows successfull erasure or failure. The file is time stamped within it's name. A new timestamped log file is created each time nwipe is started. The files can be found in the / directory. A example being nwipe_log_20200418-084910.txt. As of version [v2021.08.2_23_x86-64_0.34](https://github.com/theprath1/shredos.x86_64/releases/tag/v2021.08.2_23_x86-64_0.34) ShredOS will automatically copy the nwipe log files to the first FAT32 partition it finds, which is normally the ShredOS USB flash drive. In addition you can manually copy the log files or send them to a ftp server on your local area network. Both methods are described below starting with manually writing to a USB storage device.
 
 ### Transferring nwipe log files to a USB storage device
 1. Locate the device name of your USB stick from it's model & size. 
@@ -624,7 +624,7 @@ If frozen (repeat until not frozen)
 $ echo -n mem > /sys/power/state
 ```
 
-or alternatively, use the following command which sends the computer to sleep and then automatically powers the computer back up after 5 seconds. See ShredOS wiki for details on [sleep states](https://github.com/PartialVolume/shredos.x86_64/wiki/Unfreezing-hard-drives-for-ATA-secure-erase) These commands will only work reliably if you are using the vanilla version of ShredOS. This is because the Linux Direct Rendering Manager (DRM) is required to correctly wake the display hardware, with the nomodeset version of ShredOS DRM is disabled and you may end up with a blank screen after rewaking.
+or alternatively, use the following command which sends the computer to sleep and then automatically powers the computer back up after 5 seconds. See ShredOS wiki for details on [sleep states](https://github.com/PartialVolume/shredos.x86_64/wiki/Unfreezing-hard-drives-for-ATA-secure-erase) *(upstream wiki)* These commands will only work reliably if you are using the vanilla version of ShredOS. This is because the Linux Direct Rendering Manager (DRM) is required to correctly wake the display hardware, with the nomodeset version of ShredOS DRM is disabled and you may end up with a blank screen after rewaking.
 ```
 rtcwake -m mem -s 5
 ```
@@ -792,7 +792,7 @@ sudo apt install \
 
 #### Download the ShredOS source using the git clone command, build ShredOS and write to a USB memory device.
 ```
-$ git clone https://github.com/PartialVolume/shredos.x86_64.git
+$ git clone https://github.com/theprath1/shredos.x86_64.git
 $ cd shredos
 $ mkdir package/shredos
 $ touch package/shredos/Config.in

@@ -1,0 +1,206 @@
+name: Build ShredOS
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      defconfig:
+        description: 'Defconfig to build'
+        required: true
+        default: 'shredos_defconfig'
+        type: choice
+        options:
+          - shredos_defconfig
+          - shredos_lite_defconfig
+          - shredos_iso_extra_defconfig
+          - shredos_i686_lite_defconfig
+          - shredos_iso_extra_i686_lite_defconfig
+          - all
+
+jobs:
+  determine-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Tag push: build all configs
+            echo 'matrix={"defconfig":["shredos_defconfig","shredos_lite_defconfig","shredos_iso_extra_defconfig","shredos_i686_lite_defconfig","shredos_iso_extra_i686_lite_defconfig"]}' >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.defconfig }}" = "all" ]; then
+            echo 'matrix={"defconfig":["shredos_defconfig","shredos_lite_defconfig","shredos_iso_extra_defconfig","shredos_i686_lite_defconfig","shredos_iso_extra_i686_lite_defconfig"]}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix={"defconfig":["${{ inputs.defconfig }}"]}' >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: determine-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.determine-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          df -h /
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bash \
+            bc \
+            binutils \
+            build-essential \
+            bzip2 \
+            cpio \
+            diffutils \
+            file \
+            findutils \
+            gawk \
+            gcc \
+            g++ \
+            git \
+            gzip \
+            libelf-dev \
+            libncurses5-dev \
+            libssl-dev \
+            make \
+            mtools \
+            patch \
+            perl \
+            python3 \
+            rsync \
+            sed \
+            syslinux \
+            syslinux-utils \
+            tar \
+            unzip \
+            wget \
+            which \
+            xorriso \
+            xz-utils
+
+      - name: Fix architecture in version.txt
+        run: |
+          VERSION_FILE="board/shredos/fsoverlay/etc/shredos/version.txt"
+          if [[ "${{ matrix.defconfig }}" == *"i686"* ]]; then
+            sed -i 's/x86-64/i686/g' "$VERSION_FILE"
+          else
+            sed -i 's/i686/x86-64/g' "$VERSION_FILE"
+          fi
+          echo "Version: $(cat $VERSION_FILE)"
+
+      - name: Build ShredOS (${{ matrix.defconfig }})
+        run: |
+          make ${{ matrix.defconfig }}
+          make -j$(nproc)
+        timeout-minutes: 180
+
+      - name: Rename images with suffix
+        run: |
+          cd output/images
+          CONFIG="${{ matrix.defconfig }}"
+
+          # Add _lite suffix
+          if [[ "$CONFIG" == *"lite"* ]]; then
+            for f in shredos*.{iso,img} 2>/dev/null; do
+              [ -f "$f" ] || continue
+              base="${f%.*}"
+              ext="${f##*.}"
+              [[ "$f" != *"_lite"* ]] && mv -v "$f" "${base}_lite.${ext}"
+            done
+          fi
+
+          # Add _plus-partition suffix
+          if [[ "$CONFIG" == *"extra"* ]]; then
+            for f in shredos*.{iso,img} 2>/dev/null; do
+              [ -f "$f" ] || continue
+              base="${f%.*}"
+              ext="${f##*.}"
+              [[ "$f" != *"_plus-partition"* ]] && mv -v "$f" "${base}_plus-partition.${ext}"
+            done
+          fi
+
+          # Generate SHA1 checksums
+          for f in shredos*.{iso,img} 2>/dev/null; do
+            [ -f "$f" ] && sha1sum "$f" > "$f.sha1"
+          done
+
+          ls -lh shredos* 2>/dev/null || echo "No images found"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shredos-${{ matrix.defconfig }}
+          path: |
+            output/images/shredos*.img
+            output/images/shredos*.iso
+            output/images/shredos*.sha1
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List release files
+        run: |
+          echo "Files to release:"
+          find dist -type f | sort
+
+      - name: Get version from tag
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ShredOS ${{ steps.version.outputs.tag }}
+          body: |
+            ## ShredOS ${{ steps.version.outputs.tag }}
+
+            ### Downloads
+
+            | File | Description |
+            |------|-------------|
+            | `shredos-*_x86-64_*.img` | 64-bit USB image (burn with Rufus/dd) |
+            | `shredos-*_x86-64_*.iso` | 64-bit ISO (burn with Rufus to USB, or to CD/DVD) |
+            | `shredos-*_x86-64_*_lite.*` | 64-bit lite (for systems with 512MB RAM) |
+            | `shredos-*_x86-64_*_plus-partition.*` | 64-bit ISO with extra writable partition |
+            | `shredos-*_i686_*` | 32-bit versions |
+            | `*.sha1` | SHA1 checksums |
+
+            ### Burning to USB with Rufus (Windows)
+            1. Download the `.iso` file
+            2. Open [Rufus](https://rufus.ie/)
+            3. Select your USB drive
+            4. Select the downloaded `.iso` file
+            5. Click Start
+
+            ### Burning to USB with dd (Linux/macOS)
+            ```
+            sudo dd if=shredos-*.img of=/dev/sdX bs=4M status=progress
+            ```
+
+            ---
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.tag }}
+          files: dist/**/*
+          draft: false
+          prerelease: false
